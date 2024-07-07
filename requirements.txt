@@ -1,0 +1,10 @@
+# Pyhton flask app requirements
+
+flask
+sqlalchemy
+flask_migrate
+flask_bcrypt
+flask_jwt_extended
+flask_cors
+gunicorn
+psycopg2-binary
