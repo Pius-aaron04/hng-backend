@@ -1,7 +1,7 @@
 import os
 from sqlalchemy import create_engine, URL
 from sqlalchemy.orm import sessionmaker, scoped_session
-from .models import User, Organisation
+from .models import User, Organisation, Base
 
 
 class DBStorage:
@@ -39,10 +39,13 @@ class DBStorage:
         """
         fectchs object by kwargs
         """
-        if limit:
-            return self.__session.query(cls).filter_by(**kwargs).limit(limit).first()
-        else:
-            return self.__session.query(cls).filter_by(**kwargs).all()
+        try:
+            if limit:
+                return self.__session.query(cls).filter_by(**kwargs).limit(limit).first()
+            else:
+                return self.__session.query(cls).filter_by(**kwargs).all()
+        except Exception:
+            self.rollback()
 
     def reload(self):
         """
@@ -50,8 +53,8 @@ class DBStorage:
         """
 
         # Create the tables
-        User.metadata.create_all(self.__engine)
-        Organisation.metadata.create_all(self.__engine)
+        Base.metadata.create_all(self.__engine)
+
         # Create a session
         session = sessionmaker(bind=self.__engine, expire_on_commit=False)
         self.__session = scoped_session(session)

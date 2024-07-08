@@ -18,9 +18,13 @@ class BaseModel:
         """
         saves object to the data base
         """
+
         from .app import storage
-        storage.new(self)
-        storage.save()
+        try:
+            storage.new(self)
+            storage.save()
+        except Exception:
+            storage.rollback()
 
     def delete(self):
         """
