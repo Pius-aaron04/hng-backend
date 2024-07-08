@@ -12,6 +12,7 @@ import os
 from .config import Config
 from . import storage
 import datetime
+from uuid import uuid4
 
 
 config = Config
@@ -23,13 +24,12 @@ app.config['SQLALCHEMY_MIGRATE_WITH_SCHEMA'] = True
 app.config['SQLALCHEMY_MIGRATE_WITH_MISSING'] = True
 migrate = Migrate(app, storage.engine)
 
-bcrypt = Bcrypt(app)
-
 app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY')
+bcrypt = Bcrypt(app)
 
 jwt = JWTManager(app)
 jwt.jwt_payload_handler = lambda identity: {'identity': identity, 'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=20)}
-jwt.jwt_expires_delta = datetime.timedelta(minutes=20)
+jwt.jwt_expires_delta = datetime.timedelta(hours=24)
 cors = CORS(app, resources={r"/*": {"origins": "*"}})
 
 @app.route("/", strict_slashes=False)
@@ -95,10 +95,13 @@ def register():
         }), 400
     
     # create user
+    payload['userId'] = str(uuid4())
     user = User(**payload)
     # create an organisation object by default with user's first name as name
     org_name = user.firstName + "'s organisation"
-    user.organisations.append(Organisation(name=org_name))
+    org = Organisation(name=org_name, orgId=user.userId)
+    org.save()
+    user.organisations.append(org)
     user.save()
 
     # generate jwt token
@@ -172,8 +175,9 @@ def user(id):
         }, 200
     
     other_user = storage.fetch(User, limit=1, userId=id)
+    if not other_user:
+        return jsonify({"message": "User not found"}), 404
     for org in user.organisations:
-        print(f'compared {org.users} with {other_user}')
         if other_user in org.users:
             return {
                 "success": "success",
@@ -251,8 +255,11 @@ def create_organisation():
             "statusCode": 400
         }, 400
     
+    payload["orgId"] = str(uuid4())
     org = Organisation(**payload)
     org.userId = user.userId
+    if org in user.organisations:
+        return {"message": "Organisation already exists"}, 400
     user.organisations.append(org)
     org.save()
 

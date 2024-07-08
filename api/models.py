@@ -13,11 +13,6 @@ class BaseModel:
     """
     Base model class that contains common methods
     """
-    def to_dict(self):
-        """
-        Returns model data in dictionary format
-        """
-        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
     def save(self):
         """
@@ -35,7 +30,7 @@ class BaseModel:
         from .app import storage
         if self.__class__ == User:
             for org in self.organisations:
-                org.delete()
+                storage.delete(org)
         storage.delete(self)
         storage.save()
 
@@ -65,7 +60,7 @@ class User(BaseModel, Base):
             if k != "password":
                 setattr(self, k, v)
             else:
-                self.password = bcrypt.generate_password_hash(v)
+                self.password = bcrypt.generate_password_hash(v).decode('utf-8')
 
     def __repr__(self):
         return f'<User {self.userId}>'
@@ -88,13 +83,17 @@ class Organisation(BaseModel, Base):
     Defines organisation model with data fields
     """
     __tablename__ = "organisations"
-
     orgId = Column(String(60), default=str(uuid4()), nullable=False,
-                   primary_key=True, unique=True)
+                    primary_key=True, unique=True)
     userId = Column(String(60), ForeignKey("users.userId"), nullable=True)
     name = Column(String(50), nullable=False)
     description = Column(String(128))
 
+
+    def __init__(self, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+        
     def __repr__(self):
         return f'<Organisation {self.orgId}>'
     

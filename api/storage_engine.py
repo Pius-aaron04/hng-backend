@@ -1,6 +1,6 @@
 import os
 from sqlalchemy import create_engine, URL
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, scoped_session
 from .models import User, Organisation
 
 
@@ -53,8 +53,8 @@ class DBStorage:
         User.metadata.create_all(self.__engine)
         Organisation.metadata.create_all(self.__engine)
         # Create a session
-        Session = sessionmaker(bind=self.__engine)
-        self.__session = Session()
+        session = sessionmaker(bind=self.__engine, expire_on_commit=False)
+        self.__session = scoped_session(session)
 
     def save(self):
         """
