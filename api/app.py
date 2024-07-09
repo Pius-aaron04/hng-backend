@@ -28,7 +28,7 @@ app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY')
 bcrypt = Bcrypt(app)
 
 jwt = JWTManager(app)
-jwt.jwt_payload_handler = lambda identity: {'identity': identity, 'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=20)}
+jwt.jwt_payload_handler = lambda identity: {'identity': identity, 'exp': datetime.datetime.now() + datetime.timedelta(hours=24)}
 jwt.jwt_expires_delta = datetime.timedelta(hours=24)
 cors = CORS(app, resources={r"/*": {"origins": "*"}})
 
